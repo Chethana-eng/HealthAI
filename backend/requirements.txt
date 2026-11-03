@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+google-genai
+pydantic
+pydantic-settings
+python-dotenv
+cachetools
+rapidfuzz
+pytest
+httpx
