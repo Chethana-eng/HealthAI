@@ -1,94 +1,56 @@
- <div align="center">
-
 # HealthAI
 
-### Understand symptoms. Explore possibilities. Make informed next steps.
+A patient symptom checker built using React, FastAPI and Google Gemini.
 
-An AI-powered symptom analysis application built with **React, FastAPI and Google Gemini.**
+HealthAI takes symptoms described in natural language and uses an LLM to generate possible health conditions, explain why they may be relevant, and suggest appropriate next steps.
 
-<br/>
+**Note:** This is an informational prototype, not a medical diagnostic tool.
 
-![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![Python](https://img.shields.io/badge/Language-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Gemini](https://img.shields.io/badge/AI-Google_Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)
+## What I built
 
-<br/>
+- A React interface for entering symptoms, duration and severity.
+- A FastAPI backend to process requests and communicate with Gemini.
+- Symptom preprocessing to normalize user input.
+- Emergency keyword screening before AI analysis.
+- Structured JSON responses validated using Pydantic.
+- In-memory caching to avoid repeated API calls.
+- Error handling for invalid inputs and temporary Gemini failures.
 
-**[Features](#-what-it-does) · [Architecture](#-under-the-hood) · [Tech Stack](#-technology-stack) · [Setup](#-getting-started) · [Testing](#-testing)**
+## How it works
 
-</div>
-
----
-
-## 01. The Project
-
-HealthAI started with a simple idea: explore how Large Language Models can be used to make preliminary health information more accessible.
-
-Users describe their symptoms, provide additional context such as duration and severity, and receive AI-generated insights containing possible conditions, explanations and recommended next steps.
-
-But the interesting part isn't just the Gemini integration. It's how the application processes, validates and handles those responses before presenting them to the user.
-
-## 02. What It Does
-
-| Feature | Implementation |
-|:--|:--|
-| Symptom Analysis | Context-aware analysis using Gemini |
-| Input Preprocessing | Normalization of user-reported symptoms |
-| Emergency Screening | Checks for predefined emergency indicators before LLM processing |
-| Intelligent Caching | SHA-256 based request keys to reuse previous results |
-| Structured Responses | Pydantic schema validation |
-| Error Handling | Handles invalid inputs and service failures |
-
-## 03. Under the Hood
-
-The application follows a simple request-processing pipeline.
-
-```mermaid
-flowchart TD
-    A["React Frontend"] --> B["FastAPI Backend"]
-    B --> C["Symptom Preprocessing"]
-    C --> D{"Emergency Screening"}
-
-    D -->|Emergency| E["Emergency Response"]
-    D -->|Continue| F["SHA-256 Cache Key"]
-
-    F --> G{"Cache Lookup"}
-
-    G -->|Cache Hit| H["Return Cached Result"]
-    G -->|Cache Miss| I["Google Gemini API"]
-
-    I --> J["Pydantic Validation"]
-    J --> K["Cache Successful Result"]
-
-    K --> L["Return Analysis"]
-    H --> L
+```text
+User Input
+    ↓
+React Frontend
+    ↓
+FastAPI Backend
+    ↓
+Input Validation & Preprocessing
+    ↓
+Emergency Screening
+    ↓
+Cache Lookup
+    ↓
+Gemini API (on cache miss)
+    ↓
+Pydantic Response Validation
+    ↓
+Result Returned to Frontend
 ```
 
-**A few engineering decisions worth highlighting:**
+## Tech Stack
 
-- Emergency screening happens before the Gemini API call.
-- Cache keys are generated using normalized symptoms, duration and severity.
-- Repeated requests can reuse cached responses instead of making unnecessary API calls.
-- Gemini responses are validated against a defined Pydantic schema before being returned.
+- **Frontend:** React
+- **Backend:** Python, FastAPI
+- **LLM:** Google Gemini
+- **Validation:** Pydantic
+- **Caching:** cachetools
+- **Testing:** pytest
 
-## 04. Technology Stack
-
-| Layer | Technology |
-|:--|:--|
-| Frontend | React.js, Vite |
-| Backend | Python, FastAPI |
-| AI Integration | Google Gemini API |
-| Data Validation | Pydantic |
-| Caching | Python cache service, SHA-256 |
-| Testing | Pytest |
-| Version Control | Git, GitHub |
-
-## 05. Project Structure
+## Project Structure
 
 ```text
 HealthAI/
-│
 ├── backend/
 │   ├── app/
 │   │   ├── core/
@@ -96,37 +58,33 @@ HealthAI/
 │   │   ├── schemas/
 │   │   ├── services/
 │   │   └── main.py
-│   │
 │   ├── tests/
-│   │   └── test_symptom_api.py
-│   │
-│   ├── .env.example
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── .env.example
 │
 ├── frontend/
-│   ├── public/
 │   ├── src/
+│   ├── public/
 │   └── package.json
 │
 └── README.md
 ```
 
-## 06. Getting Started
+## Running locally
 
-### Prerequisites
+**1. Clone the repository**
 
-- Python 3.10+
-- Node.js and npm
-- Google Gemini API key
+```bash
+git clone YOUR_REPOSITORY_URL
+cd HealthAI
+```
 
-### Backend
+**2. Set up the backend**
 
 ```bash
 cd backend
-
 python -m venv venv
 venv\Scripts\activate
-
 pip install -r requirements.txt
 ```
 
@@ -134,20 +92,22 @@ Create a `.env` file inside `backend/`:
 
 ```env
 GEMINI_API_KEY=your_api_key
-GEMINI_MODEL=gemini-3.5-flash
+GEMINI_MODEL=your_model_name
 ```
 
-Start the backend:
+Run the server:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-API documentation: `http://127.0.0.1:8000/docs`
+Backend API: `http://127.0.0.1:8000`
 
-### Frontend
+API docs: `http://127.0.0.1:8000/docs`
 
-Open a separate terminal:
+**3. Set up the frontend**
+
+In a separate terminal:
 
 ```bash
 cd frontend
@@ -157,75 +117,61 @@ npm run dev
 
 Open the local URL provided by Vite.
 
-## 07. API Reference
+## API
 
-**POST** `/api/v1/analyze`
+`POST /api/v1/analyze`
 
 Example request:
 
 ```json
 {
-  "symptoms": "Burning sensation in my stomach",
-  "duration": "1-3 days",
+  "symptoms": "Headache and mild fever",
+  "duration": "2 days",
   "severity": "Moderate"
 }
 ```
 
-The API returns structured information containing:
+The API returns potential conditions, explanations, matching symptoms, recommended next steps and a disclaimer.
 
-- Possible health conditions
-- Explanations
-- Matching symptoms
-- Recommended next steps
-- Medical disclaimer
+## A few implementation decisions
 
-The response also identifies whether the result came from the cache or Gemini.
+**Why Gemini?**
 
-## 08. Testing
+A small student-developer decision: I went with Gemini partly because its free tier made experimentation easier on a student budget! More importantly, it let me work with a pretrained LLM and structured JSON responses without building a model from scratch.
 
-Testing is performed using Pytest and FastAPI's test client.
+**Why caching?**
+
+Identical requests can reuse previously generated results. The current TTL cache holds up to 100 entries for 5 minutes. It is in-memory, so the cache resets when the backend restarts.
+
+**Why Pydantic?**
+
+LLM output is not automatically trustworthy or correctly formatted. Pydantic validates the response against the expected schema before it is returned.
+
+**What about emergency symptoms?**
+
+The backend checks for selected emergency-related keywords before calling Gemini. This is only a basic screening mechanism; it is not comprehensive and cannot determine whether someone is medically safe.
+
+## Testing
+
+Run the backend tests:
 
 ```bash
-python -m pytest tests/ -v
+pytest -v
 ```
 
-**Latest test results**
+The test suite covers the implemented validation, safety, caching and service behavior. See the test files for the exact cases.
 
-| Test Case | Result |
-|:--|:--:|
-| Empty symptom validation | PASS |
-| Short symptom validation | PASS |
-| Successful symptom analysis | PASS |
-| Emergency screening bypass | PASS |
-| Symptom result caching | PASS |
+## Current limitations
 
-<div align="center">
+- Gemini responses depend on external API availability and latency.
+- AI-generated conditions may be inaccurate or incomplete.
+- Emergency keyword matching can miss important symptoms.
+- Cache entries are not persistent across restarts.
 
-### 5 / 5 TESTS PASSED
+Possible next steps include Redis caching, stronger input handling, broader safety testing and API rate limiting.
 
-</div>
+## AI tools used
 
-## 09. What's Next?
-
-This project is still evolving. My current focus is on making the system more reliable and closer to a production-ready application.
-
-- Evaluating the grounding and consistency of LLM-generated responses.
-- Improving input validation and error handling.
-- Exploring deployment and monitoring.
-- Strengthening automated testing.
+ChatGPT assistance was used during development for implementation guidance, debugging, Gemini integration and documentation. The generated suggestions were reviewed and adapted while building and testing the application.
 
 ---
-
-## A Note on Medical Safety
-
-HealthAI is an experimental application that provides preliminary AI-generated health information. It does not diagnose medical conditions, prescribe treatments or replace professional medical evaluation. Emergency symptoms require appropriate immediate medical attention.
-
----
-
-<div align="center">
-
-**HEALTHAI**
-
-*Built to explore the intersection of AI and accessible health information.*
-
-</div>
