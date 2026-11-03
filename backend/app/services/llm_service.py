@@ -1,4 +1,3 @@
-import json
 
 from google import genai
 from google.genai import types
@@ -13,30 +12,23 @@ client = genai.Client(
 
 
 SYSTEM_INSTRUCTIONS = """
-You are HealthAI, an AI assistant that provides
+You are HealthAI, an AI assistant providing
 preliminary health information.
 
-You are NOT a doctor and must NEVER provide a
-definitive medical diagnosis.
+You are NOT a doctor and must NEVER provide
+a definitive medical diagnosis.
 
-Your responsibilities:
+Responsibilities:
 
-1. Analyze the symptoms provided by the user.
-2. Identify at least three plausible potential
-   health conditions when sufficient information
-   is available.
-3. Explain why each condition may be relevant.
-4. Identify which reported symptoms are associated
-   with each possibility.
-5. Never invent symptoms or patient information.
-6. Do not claim certainty or assign unsupported
-   probabilities.
-7. Recommend appropriate professional medical
-   evaluation.
-8. If information is insufficient, clearly explain
-   the uncertainty and request more information.
-9. Never provide dangerous medication instructions.
-10. Always clarify that this is not a diagnosis.
+1. Analyze only the symptoms reported by the user.
+2. Identify up to three plausible conditions.
+3. Do not invent symptoms or patient information.
+4. Explain uncertainty when information is insufficient.
+5. Never assign unsupported probabilities.
+6. Never prescribe medication or dosage.
+7. Recommend appropriate professional evaluation.
+8. Identify warning signs requiring urgent care.
+9. Always include a medical disclaimer.
 
 Return structured output matching the supplied schema.
 """
@@ -48,6 +40,9 @@ def analyze_with_gemini(
     severity: str = "Not specified"
 ):
 
+    if not settings.GEMINI_API_KEY:
+        raise ValueError("Gemini API key is missing.")
+
     prompt = f"""
     Patient-reported symptoms: {symptoms}
 
@@ -56,36 +51,45 @@ def analyze_with_gemini(
     Severity: {severity}
 
     Provide a cautious preliminary assessment.
+    Do not invent missing information.
+    If information is insufficient, explain why.
     """
 
-    response = client.models.generate_content(
+    try:
 
-        model=settings.GEMINI_MODEL,
+        response = client.models.generate_content(
 
-        contents=prompt,
+            model=settings.GEMINI_MODEL,
 
-        config=types.GenerateContentConfig(
+            contents=prompt,
 
-            system_instruction=SYSTEM_INSTRUCTIONS,
+            config=types.GenerateContentConfig(
 
-            response_mime_type="application/json",
+                system_instruction=SYSTEM_INSTRUCTIONS,
 
-            response_schema=SymptomAnalysis,
+                response_mime_type="application/json",
 
-            temperature=0.2
-        )
-    )
+                response_schema=SymptomAnalysis,
 
-    if not response.text:
-        raise ValueError("Gemini returned an empty response.")
-
-    result = SymptomAnalysis.model_validate_json(
-        response.text
-    )
-
-    if len(result.possible_conditions) < 3:
-        raise ValueError(
-            "The model returned insufficient conditions."
+                temperature=0.2
+            )
         )
 
-    return result.model_dump()
+        if not response.text:
+            raise ValueError(
+                "Gemini returned an empty response."
+            )
+
+        result = SymptomAnalysis.model_validate_json(
+            response.text
+        )
+
+        return result.model_dump()
+
+    except ValueError:
+        raise
+
+    except Exception as error:
+        raise RuntimeError(
+            "Gemini analysis service failed."
+        ) from error
