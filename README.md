@@ -156,7 +156,7 @@ The backend checks for selected emergency-related keywords before calling Gemini
 Run the backend tests:
 
 ```bash
-pytest -v
+python -m pytest -v
 ```
 
 The test suite covers the implemented validation, safety, caching and service behavior. See the test files for the exact cases.
